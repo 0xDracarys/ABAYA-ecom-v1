@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 255, 255, 255;
+  --background-end-rgb: 255, 255, 255;
+
+  /* Custom colors */
+  --primary: 220, 38, 38;
+  --primary-foreground: 255, 255, 255;
+  --secondary: 30, 41, 59;
+  --secondary-foreground: 255, 255, 255;
+  --accent: 245, 158, 11;
+  --accent-foreground: 255, 255, 255;
+  --muted: 241, 245, 249;
+  --muted-foreground: 100, 116, 139;
+  --card: 255, 255, 255;
+  --card-foreground: 15, 23, 42;
+  --border: 226, 232, 240;
+  --input: 226, 232, 240;
+  --ring: 220, 38, 38;
+}
+
+.dark {
+  --foreground-rgb: 255, 255, 255;
+  --background-start-rgb: 0, 0, 0;
+  --background-end-rgb: 0, 0, 0;
+
+  /* Custom colors for dark mode */
+  --primary: 248, 113, 113;
+  --primary-foreground: 15, 23, 42;
+  --secondary: 100, 116, 139;
+  --secondary-foreground: 255, 255, 255;
+  --accent: 251, 191, 36;
+  --accent-foreground: 15, 23, 42;
+  --muted: 51, 65, 85;
+  --muted-foreground: 148, 163, 184;
+  --card: 15, 23, 42;
+  --card-foreground: 255, 255, 255;
+  --border: 51, 65, 85;
+  --input: 51, 65, 85;
+  --ring: 248, 113, 113;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer components {
+  .container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .btn-primary {
+    @apply bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/90 transition-colors;
+  }
+
+  .btn-secondary {
+    @apply bg-secondary text-white px-4 py-2 rounded-md hover:bg-secondary/90 transition-colors;
+  }
+
+  .btn-outline {
+    @apply border border-primary text-primary px-4 py-2 rounded-md hover:bg-primary/10 transition-colors;
+  }
+
+  .card {
+    @apply bg-card rounded-lg shadow-md overflow-hidden;
+  }
+
+  .input {
+    @apply w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring;
+  }
+}
