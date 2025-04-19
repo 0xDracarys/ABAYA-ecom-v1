@@ -26,21 +26,21 @@ const FALLBACK_PRODUCTS = [
     slug: "embroidered-elegance",
     price: 189.99,
     sale_price: 149.99,
-    image_url: "https://res.cloudinary.com/dssuwgyjm/image/upload/v1/abaya-elegance/product-1.jpg"
+    image_url: "/abaya-1.png"
   },
   {
     id: "2",
     name: "Ethereal Lace Trim Abaya",
     slug: "ethereal-lace",
     price: 219.99,
-    image_url: "https://res.cloudinary.com/dssuwgyjm/image/upload/v1/abaya-elegance/product-2.jpg"
+    image_url: "/abaya-2.png"
   },
   {
     id: "3",
     name: "Luminous Pearl Detailed Abaya",
     slug: "luminous-pearl",
     price: 249.99,
-    image_url: "https://res.cloudinary.com/dssuwgyjm/image/upload/v1/abaya-elegance/product-3.jpg"
+    image_url: "/abaya-3.png"
   },
   {
     id: "4",
@@ -48,7 +48,7 @@ const FALLBACK_PRODUCTS = [
     slug: "royal-butterfly",
     price: 199.99,
     sale_price: 159.99,
-    image_url: "https://res.cloudinary.com/dssuwgyjm/image/upload/v1/abaya-elegance/product-4.jpg"
+    image_url: "/abaya-4.png"
   }
 ]
 

@@ -20,23 +20,63 @@ function SubmitButton() {
 
 export default function LoginForm({ redirectTo = "/" }: { redirectTo?: string }) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
   
   async function handleSubmit(formData: FormData) {
     setErrorMessage(null)
-    
-    // Log submitted credentials for debugging
-    console.log(`Attempting login with: ${formData.get('email')}`)
+    setIsLoading(true)
     
     try {
+      // Verify environment variables client-side
+      if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+        console.error('Missing Supabase configuration:', {
+          hasUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+          hasKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+        })
+        throw new Error('Authentication system is not properly configured')
+      }
+      
+      // Log submitted credentials for debugging
+      console.log(`Attempting login with: ${formData.get('email')}`)
+      
       const result = await signIn(formData)
       
       if (result?.error) {
+        if (result.error === 'Authentication configuration error') {
+          throw new Error('Authentication system is not properly configured')
+        }
         setErrorMessage(result.error)
       }
     } catch (error) {
       console.error("Login error:", error)
-      setErrorMessage("An unexpected error occurred. Please try again.")
+      setErrorMessage(
+        error instanceof Error 
+          ? error.message 
+          : "An unexpected error occurred. Please try again."
+      )
+    } finally {
+      setIsLoading(false)
     }
+  }
+  
+  if (errorMessage?.includes('not properly configured')) {
+    return (
+      <div className="rounded-md bg-red-50 p-4">
+        <div className="flex">
+          <div className="flex-shrink-0">
+            <ExclamationCircleIcon className="h-5 w-5 text-red-400" />
+          </div>
+          <div className="ml-3">
+            <h3 className="text-sm font-medium text-red-800">
+              Configuration Error
+            </h3>
+            <div className="mt-2 text-sm text-red-700">
+              <p>The authentication system is not properly configured. Please contact the administrator.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
   
   return (
@@ -54,6 +94,7 @@ export default function LoginForm({ redirectTo = "/" }: { redirectTo?: string })
               type="email"
               autoComplete="email"
               required
+              disabled={isLoading}
               className="block w-full pl-10 pr-3 py-2"
               placeholder="Enter your email"
             />
@@ -79,6 +120,7 @@ export default function LoginForm({ redirectTo = "/" }: { redirectTo?: string })
               type="password"
               autoComplete="current-password"
               required
+              disabled={isLoading}
               className="block w-full pl-10 pr-3 py-2"
               placeholder="Enter your password"
             />
@@ -90,7 +132,7 @@ export default function LoginForm({ redirectTo = "/" }: { redirectTo?: string })
       
       <SubmitButton />
       
-      {errorMessage && (
+      {errorMessage && !errorMessage.includes('not properly configured') && (
         <div className="flex items-center space-x-2 text-red-600 text-sm">
           <ExclamationCircleIcon className="h-5 w-5 flex-shrink-0" />
           <p>{errorMessage}</p>
