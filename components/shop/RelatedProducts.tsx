@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import Image from "next/image"
 import { supabase } from "@/lib/supabase/client"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ClientImage } from "@/components/ui/client-image"
 
 interface Product {
   id: string
@@ -82,12 +82,13 @@ export default function RelatedProducts({ categoryId, currentProductId }: Relate
             className="group block bg-white overflow-hidden shadow-sm hover:shadow-md transition-all duration-300"
           >
             <div className="aspect-[3/4] relative overflow-hidden">
-              <Image
+              <ClientImage
                 src={product.image_url || 'https://source.unsplash.com/random/600x800/?abaya'}
                 alt={product.name}
                 fill
                 className="object-cover group-hover:scale-105 transition-transform duration-500"
                 sizes="(max-width: 768px) 50vw, 25vw"
+                fallbackColor="#f5f5f5"
               />
             </div>
             <div className="p-3">

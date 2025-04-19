@@ -1,71 +1,81 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, ReactNode } from "react"
 import { useRouter } from "next/navigation"
+import { supabase } from "@/lib/supabase/client"
 import { Spinner } from "@/components/ui/spinner"
-import { useSupabaseAuth } from "@/hooks/use-supabase-auth"
-import { supabase } from "@/lib/supabase/client" 
 
 interface AdminAuthCheckProps {
-  children: React.ReactNode
+  children: ReactNode
 }
 
-export function AdminAuthCheck({ children }: AdminAuthCheckProps) {
+export default function AdminAuthCheck({ children }: AdminAuthCheckProps) {
   const [isLoading, setIsLoading] = useState(true)
-  const [isAuthorized, setIsAuthorized] = useState(false)
-  const { user } = useSupabaseAuth()
+  const [isAdmin, setIsAdmin] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
-    async function checkAdminStatus() {
+    const checkAdminStatus = async () => {
       try {
         setIsLoading(true)
+
+        // Check if user is logged in
+        const { data: { session } } = await supabase.auth.getSession()
         
-        if (!user) {
-          router.push("/auth/login?redirectTo=/admin")
+        if (!session) {
+          router.push('/auth/login?redirect=/admin&message=Please login with admin credentials')
           return
         }
-        
-        // Option 1: Check a custom claim or field on the user record
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('is_admin')
-          .eq('id', user.id)
+
+        // Check if user has admin role
+        const { data: userRole, error } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", session.user.id)
           .single()
         
         if (error) {
           console.error("Error checking admin status:", error)
-          router.push("/")
+          setIsAdmin(false)
+          router.push('/')
           return
         }
-        
-        if (data?.is_admin) {
-          setIsAuthorized(true)
-        } else {
-          router.push("/")
+
+        if (userRole?.role !== "admin") {
+          console.log("User is not an admin:", session.user.email)
+          setIsAdmin(false)
+          router.push('/?message=You do not have admin access')
+          return
         }
+
+        console.log("Admin access granted for:", session.user.email)
+        setIsAdmin(true)
       } catch (error) {
-        console.error("Error in admin auth check:", error)
-        router.push("/")
+        console.error("Unexpected error during admin check:", error)
+        setIsAdmin(false)
+        router.push('/')
       } finally {
         setIsLoading(false)
       }
     }
-    
+
     checkAdminStatus()
-  }, [user, router])
-  
+  }, [router])
+
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <Spinner className="w-10 h-10 border-4 border-primary mx-auto mb-4" />
-          <p className="text-lg text-gray-600">Verifying admin access...</p>
+          <Spinner size="lg" />
+          <p className="mt-4 text-gray-600">Verifying admin access...</p>
         </div>
       </div>
     )
   }
-  
-  // Only render children if user is authorized
-  return isAuthorized ? <>{children}</> : null
+
+  if (!isAdmin) {
+    return null // The useEffect will redirect non-admins
+  }
+
+  return <>{children}</>
 } 

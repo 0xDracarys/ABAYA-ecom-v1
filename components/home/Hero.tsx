@@ -8,17 +8,17 @@ import { ClientImage } from "@/components/ui/client-image"
 
 const SLIDES = [
   {
-    image: "https://res.cloudinary.com/dssuwgyjm/image/upload/v1/abaya-elegance/hero-image-1.jpg",
+    image: "/abaya-main-page-upper.jpg",
     title: "Elegant Abayas for Every Occasion",
     subtitle: "Crafted with precision and designed with grace"
   },
   {
-    image: "https://res.cloudinary.com/dssuwgyjm/image/upload/v1/abaya-elegance/hero-image-2.jpg",
+    image: "/abayajpeg-1.jpeg",
     title: "Luxury in Every Detail",
     subtitle: "Premium fabrics and expert craftsmanship"
   },
   {
-    image: "https://res.cloudinary.com/dssuwgyjm/image/upload/v1/abaya-elegance/hero-image-3.jpg",
+    image: "/abayajpeg-2.jpeg",
     title: "Timeless Modest Fashion",
     subtitle: "Where tradition meets contemporary style"
   }

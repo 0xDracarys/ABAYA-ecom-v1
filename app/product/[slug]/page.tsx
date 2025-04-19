@@ -59,14 +59,18 @@ async function getProductBySlug(slug: string): Promise<Product | null> {
         )
       `)
       .eq('slug', slug)
-      .single()
-    
+      
     if (error) {
       console.error('Error fetching product:', error)
       return null
     }
     
-    return data
+    if (!data || data.length === 0) {
+      console.log(`No product found with slug: ${slug}`)
+      return null
+    }
+    
+    return data[0]
   } catch (error) {
     console.error('Failed to fetch product:', error)
     return null

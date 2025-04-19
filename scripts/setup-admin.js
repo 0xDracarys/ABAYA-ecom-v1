@@ -3,10 +3,76 @@
 const { createClient } = require('@supabase/supabase-js');
 const fs = require('fs');
 const path = require('path');
-const dotenv = require('dotenv');
+require('dotenv').config({ path: '.env.local' });
 
-// Load environment variables
-dotenv.config({ path: '.env' });
+async function setupAdmin() {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    console.error('Error: Missing Supabase credentials in .env.local file');
+    console.error('Make sure NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are set');
+    process.exit(1);
+  }
+
+  try {
+    // Create Supabase client with service role key for admin access
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+
+    // Read SQL script
+    const sqlScript = fs.readFileSync(
+      path.join(__dirname, 'setup-admin-user.sql'),
+      'utf8'
+    );
+
+    console.log('Setting up user_roles table and policies...');
+    
+    // Execute SQL script in chunks
+    const sqlCommands = sqlScript.split(';').filter(cmd => cmd.trim());
+    
+    for (const cmd of sqlCommands) {
+      if (cmd.trim()) {
+        await supabase.rpc('exec_sql', { query: cmd.trim() + ';' }).catch(err => {
+          console.warn('SQL error (may be safely ignored if objects already exist):', err.message);
+        });
+      }
+    }
+
+    console.log('Creating admin user...');
+    
+    // Create a new admin user or update existing one
+    const { data, error } = await supabase.auth.admin.createUser({
+      email: 'admin@abaya-ecom.test',
+      password: 'AdminPass123!',
+      email_confirm: true,
+      user_metadata: { name: 'Admin User' }
+    });
+
+    if (error && error.message !== 'User already registered') {
+      throw error;
+    }
+
+    const userId = data?.user?.id || 
+      (await supabase.auth.admin.listUsers()).data.users.find(
+        u => u.email === 'admin@abaya-ecom.test'
+      )?.id;
+
+    if (!userId) {
+      throw new Error('Failed to retrieve admin user ID');
+    }
+
+    // Ensure user has admin role in user_roles table
+    const { error: roleError } = await supabase
+      .from('user_roles')
+      .upsert({
+        user_id: userId,
+        role: 'admin',
+        updated_at: new Date().toISOString()
+      });
+
+    if (roleError) {
+      throw roleError;
+    }
 
 // Check if required environment variables exist
 const requiredEnvVars = [

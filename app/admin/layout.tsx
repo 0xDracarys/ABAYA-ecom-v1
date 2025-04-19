@@ -1,5 +1,5 @@
 import { AdminSidebar } from "@/components/admin/AdminSidebar"
-import { AdminAuthCheck } from "@/components/admin/AdminAuthCheck"
+import AdminAuthCheck from "@/components/admin/AdminAuthCheck"
 
 export const metadata = {
   title: 'Admin Dashboard | Abaya Elegance',
