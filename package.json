@@ -4,15 +4,21 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:safe": "node scripts/check-ports.js dev",
     "build": "next build",
     "start": "next start",
+    "start:safe": "node scripts/check-ports.js start",
+    "start:custom": "node scripts/start-server.js",
     "lint": "next lint",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
+    "test:e2e": "playwright test",
     "supabase:setup": "node scripts/setup-supabase.js",
     "supabase:seed": "node scripts/seed-sample-data.js",
-    "setup": "npm install && npm run supabase:setup && npm run supabase:seed"
+    "setup:admin": "node scripts/setup-admin.js",
+    "setup": "npm install && npm run supabase:setup && npm run supabase:seed",
+    "production": "npm run build && npm run start:safe"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.2",
@@ -51,6 +57,7 @@
     "clsx": "^2.0.0",
     "cmdk": "^0.2.0",
     "date-fns": "^2.30.0",
+    "detect-port": "^1.5.1",
     "dotenv": "^16.3.1",
     "embla-carousel-react": "^8.0.0-rc14",
     "input-otp": "^1.0.1",
@@ -72,6 +79,7 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "@playwright/test": "^1.40.0",
     "@testing-library/jest-dom": "^6.1.5",
     "@testing-library/react": "^14.1.2",
     "@testing-library/user-event": "^14.5.1",
@@ -80,12 +88,15 @@
     "@types/react": "^18.2.39",
     "@types/react-dom": "^18.2.17",
     "babel-jest": "^29.7.0",
+    "critters": "^0.0.23",
+    "css-loader": "^7.1.2",
     "eslint": "9.25.0",
     "eslint-config-next": "15.3.1",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
     "mini-css-extract-plugin": "^2.9.2",
     "postcss": "^8.4.31",
+    "postcss-loader": "^8.1.1",
     "tailwindcss": "^3.3.5",
     "typescript": "^5.3.2"
   }

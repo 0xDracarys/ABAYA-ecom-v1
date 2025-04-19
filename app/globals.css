@@ -2,46 +2,68 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 255, 255, 255;
-  --background-end-rgb: 255, 255, 255;
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Raleway:wght@300;400;500;600&display=swap');
 
-  /* Custom colors */
-  --primary: 220, 38, 38;
-  --primary-foreground: 255, 255, 255;
-  --secondary: 30, 41, 59;
-  --secondary-foreground: 255, 255, 255;
-  --accent: 245, 158, 11;
-  --accent-foreground: 255, 255, 255;
-  --muted: 241, 245, 249;
-  --muted-foreground: 100, 116, 139;
-  --card: 255, 255, 255;
-  --card-foreground: 15, 23, 42;
-  --border: 226, 232, 240;
-  --input: 226, 232, 240;
-  --ring: 220, 38, 38;
+:root {
+  --background: #f9f6f2;
+  --foreground: #333333;
+  
+  --card: #ffffff;
+  --card-foreground: #333333;
+  
+  --popover: #ffffff;
+  --popover-foreground: #333333;
+  
+  --primary: #8a7158;
+  --primary-foreground: #ffffff;
+  
+  --secondary: #e5e2dd;
+  --secondary-foreground: #6d5944;
+  
+  --muted: #f1ede9;
+  --muted-foreground: #6d6d6d;
+  
+  --accent: #f9f0e1;
+  --accent-foreground: #6d5944;
+  
+  --destructive: #d64c4c;
+  --destructive-foreground: #ffffff;
+  
+  --border: #e5e2dd;
+  --input: #e5e2dd;
+  --ring: #8a7158;
+  
+  --radius: 0.3rem;
 }
 
 .dark {
-  --foreground-rgb: 255, 255, 255;
-  --background-start-rgb: 0, 0, 0;
-  --background-end-rgb: 0, 0, 0;
-
-  /* Custom colors for dark mode */
-  --primary: 248, 113, 113;
-  --primary-foreground: 15, 23, 42;
-  --secondary: 100, 116, 139;
-  --secondary-foreground: 255, 255, 255;
-  --accent: 251, 191, 36;
-  --accent-foreground: 15, 23, 42;
-  --muted: 51, 65, 85;
-  --muted-foreground: 148, 163, 184;
-  --card: 15, 23, 42;
-  --card-foreground: 255, 255, 255;
-  --border: 51, 65, 85;
-  --input: 51, 65, 85;
-  --ring: 248, 113, 113;
+  --background: #0d0d0d;
+  --foreground: #f9f6f2;
+  
+  --card: #1a1a1a;
+  --card-foreground: #f9f6f2;
+  
+  --popover: #1a1a1a;
+  --popover-foreground: #f9f6f2;
+  
+  --primary: #a38c6d;
+  --primary-foreground: #0d0d0d;
+  
+  --secondary: #2a2a2a;
+  --secondary-foreground: #c1b5a7;
+  
+  --muted: #2a2a2a;
+  --muted-foreground: #a3a3a3;
+  
+  --accent: #33291f;
+  --accent-foreground: #c1b5a7;
+  
+  --destructive: #d64c4c;
+  --destructive-foreground: #ffffff;
+  
+  --border: #2a2a2a;
+  --input: #2a2a2a;
+  --ring: #a38c6d;
 }
 
 @layer base {
@@ -50,7 +72,85 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: 'Raleway', sans-serif;
   }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Playfair Display', serif;
+  }
+}
+
+/* Elegant transitions */
+.transition-all {
+  transition-duration: 300ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Hero animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.8s ease-out forwards;
+}
+
+/* Custom button styling */
+.btn-elegant {
+  @apply bg-primary text-white px-6 py-3 transition-all hover:bg-[#6d5944] focus:outline-none focus:ring-2 focus:ring-[#8a7158] focus:ring-opacity-50;
+}
+
+/* Error Boundary Styling */
+.error-container {
+  @apply flex flex-col items-center justify-center min-h-[50vh] p-6 text-center;
+}
+
+.error-container h1 {
+  @apply text-2xl font-serif font-light text-[#8a7158] mb-4;
+}
+
+.error-container p {
+  @apply text-[#666] mb-6 max-w-md mx-auto;
+}
+
+/* Animation for loading states */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite linear;
+  background: linear-gradient(to right, #f6f7f8 8%, #edeef1 18%, #f6f7f8 33%);
+  background-size: 1000px 100%;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--primary);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--secondary-foreground);
 }
 
 @layer components {
