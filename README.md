@@ -61,7 +61,15 @@ A modern e-commerce platform built with Next.js, Supabase, and Stripe.
    npm run supabase:setup
    ```
 
-5. Run the development server:
+5. Set up admin user:
+   ```
+   npm run setup:admin
+   ```
+   This creates or updates an admin user with the following credentials:
+   - Email: admin@abaya-ecom.test
+   - Password: AdminPass123!
+
+6. Run the development server:
    ```
    npm run dev
    ```
@@ -71,7 +79,31 @@ A modern e-commerce platform built with Next.js, Supabase, and Stripe.
    npm run dev:safe
    ```
 
-6. Open [http://localhost:3000](http://localhost:3000) in your browser.
+7. Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## Troubleshooting Admin Access
+
+If you're experiencing issues with admin access or functionality:
+
+1. Verify admin user setup:
+   ```
+   npm run setup:admin
+   ```
+   This will ensure the admin user exists with the proper role.
+
+2. Check console logs:
+   The application has detailed logging in middleware, authentication, and admin components to help diagnose issues.
+
+3. Verify Supabase RLS policies:
+   Ensure Row Level Security policies for the `products`, `orders`, and other tables allow admin operations.
+
+4. Clear browser cache:
+   Sometimes authentication tokens may become stale. Try clearing your browser cache or using an incognito window.
+
+5. Restart the development server:
+   ```
+   rm -rf .next && npm run dev
+   ```
 
 ## Testing
 
@@ -109,6 +141,17 @@ ABAYA-ecom-v1/
 ├── scripts/          # Setup scripts
 ├── styles/           # Global styles
 └── __tests__/        # Jest tests (unit/integration)
+└── types/            # TypeScript type definitions
+└── utils/            # Utility functions and helpers
+└── config/           # Configuration files
+└── middleware/       # Custom middleware functions
+└── services/         # External service integrations
+└── constants/        # Constant values and enums
+└── models/           # Data models and schemas
+└── providers/        # Context providers
+└── layouts/          # Layout components
+└── api/              # API route handlers
+
 ```
 
 ## Deployment

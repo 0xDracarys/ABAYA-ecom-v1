@@ -1,16 +1,18 @@
 "use client"
 
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 
-export default function OrdersPage() {
+export default function EditProfilePage() {
   const router = useRouter()
+  const [isLoading, setIsLoading] = useState(false)
 
   return (
     <div className="container mx-auto px-4 py-12">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-2xl mx-auto">
         <Button 
           variant="outline" 
           onClick={() => router.back()}
@@ -19,28 +21,29 @@ export default function OrdersPage() {
           Back to Account
         </Button>
         
-        <h1 className="text-3xl md:text-4xl font-serif text-center text-gray-800 mb-8">
-          My Orders
-        </h1>
-        
         <Card>
           <CardHeader>
-            <CardTitle>Order History</CardTitle>
+            <CardTitle>Edit Profile</CardTitle>
             <CardDescription>
-              View your order history and check the status of your orders
+              Update your account information
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <p className="text-gray-600 text-center py-8">
-                You haven't placed any orders yet.
+              <p className="text-gray-600">
+                This is a placeholder for the Edit Profile page. 
+                In a complete implementation, this would contain a form to update your profile information.
               </p>
               
-              <div className="flex justify-center pt-4">
-                <Link href="/shop">
-                  <Button>
-                    Browse Products
-                  </Button>
+              <div className="flex space-x-2 pt-4">
+                <Button 
+                  variant="outline" 
+                  onClick={() => router.back()}
+                >
+                  Cancel
+                </Button>
+                <Link href="/account">
+                  <Button>Return to Account</Button>
                 </Link>
               </div>
             </div>

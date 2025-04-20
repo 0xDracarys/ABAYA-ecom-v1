@@ -1,5 +1,50 @@
 #!/usr/bin/env node
 
+/**
+ * ADMIN USER SETUP SCRIPT
+ * -----------------------
+ * This script creates/updates an admin user and assigns the admin role.
+ * 
+ * IMPORTANT: Before running this script, you MUST create the user_roles table
+ * in your Supabase database using the SQL below through the Supabase SQL Editor:
+ * 
+ * -- Run this in the Supabase SQL Editor first:
+ * CREATE TABLE IF NOT EXISTS public.user_roles (
+ *   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+ *   user_id UUID REFERENCES auth.users(id) NOT NULL,
+ *   role TEXT NOT NULL,
+ *   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+ *   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+ *   UNIQUE(user_id)
+ * );
+ * CREATE INDEX IF NOT EXISTS idx_user_roles_user_id ON public.user_roles(user_id);
+ * 
+ * -- If you also need to create the profiles table:
+ * CREATE TABLE IF NOT EXISTS public.profiles (
+ *   id UUID REFERENCES auth.users(id) PRIMARY KEY,
+ *   email TEXT,
+ *   full_name TEXT,
+ *   avatar_url TEXT,
+ *   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+ *   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+ * );
+ * 
+ * -- Enable Row Level Security
+ * ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
+ * ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ * 
+ * -- Create RLS policies
+ * CREATE POLICY "Users can read their own role" 
+ *   ON public.user_roles FOR SELECT 
+ *   USING (auth.uid() = user_id);
+ * 
+ * CREATE POLICY "Public profiles are viewable by everyone"
+ *   ON public.profiles FOR SELECT
+ *   USING (true);
+ * 
+ * Run with: node scripts/setup-admin.js
+ */
+
 require('dotenv').config({ path: '.env.local' });
 
 const { createClient } = require('@supabase/supabase-js');
@@ -13,7 +58,7 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl || !serviceRoleKey) {
-  console.error('Error: Missing required environment variables');
+  console.error('❌ Error: Missing required environment variables');
   console.error('Please ensure the following variables are set in .env.local:');
   console.error('- NEXT_PUBLIC_SUPABASE_URL');
   console.error('- SUPABASE_SERVICE_ROLE_KEY');
@@ -29,27 +74,47 @@ const supabase = createClient(supabaseUrl, serviceRoleKey, {
 });
 
 async function setupAdmin() {
-  console.log('Setting up admin user...');
-  console.log(`Email: ${ADMIN_EMAIL}`);
+  console.log('🔧 Setting up admin user...');
+  console.log(`📧 Email: ${ADMIN_EMAIL}`);
 
   try {
-    // Step 1: List users and find or create admin
-    console.log('Checking if admin user exists...');
+    // Step 1: Verify the user_roles table exists
+    console.log('🔍 Checking if user_roles table exists...');
+    
+    const { error: tableCheckError } = await supabase
+      .from('user_roles')
+      .select('count')
+      .limit(1);
+      
+    if (tableCheckError) {
+      console.error('❌ Error accessing user_roles table: ', tableCheckError.message);
+      console.error('');
+      console.error('IMPORTANT: You must create the user_roles table first!');
+      console.error('Please run the SQL commands listed at the top of this script');
+      console.error('in the Supabase SQL Editor, then run this script again.');
+      process.exit(1);
+    }
+    
+    console.log('✅ user_roles table exists');
+
+    // Step 2: List users and find or create admin
+    console.log('🔍 Checking if admin user exists...');
     const { data: { users }, error: listError } = await supabase.auth.admin.listUsers();
     
     if (listError) {
       throw new Error(`Error listing users: ${listError.message}`);
     }
     
+    console.log(`Found ${users.length} users in the system`);
     const adminUser = users.find(user => user.email === ADMIN_EMAIL);
     let userId;
     
     if (adminUser) {
       userId = adminUser.id;
-      console.log(`Admin user already exists with ID: ${userId}`);
+      console.log(`✅ Admin user already exists with ID: ${userId}`);
       
       // Update admin password
-      console.log('Updating admin password...');
+      console.log('🔄 Updating admin password...');
       const { error: updateError } = await supabase.auth.admin.updateUserById(userId, {
         password: ADMIN_PASSWORD,
         email_confirm: true
@@ -59,15 +124,14 @@ async function setupAdmin() {
         throw new Error(`Error updating admin password: ${updateError.message}`);
       }
       
-      console.log('Admin password updated successfully');
+      console.log('✅ Admin password updated successfully');
     } else {
       // Create admin user
-      console.log('Creating new admin user...');
+      console.log('➕ Creating new admin user...');
       const { data, error: createError } = await supabase.auth.admin.createUser({
         email: ADMIN_EMAIL,
         password: ADMIN_PASSWORD,
-        email_confirm: true,
-        user_metadata: { role: 'admin' }
+        email_confirm: true
       });
       
       if (createError) {
@@ -75,82 +139,64 @@ async function setupAdmin() {
       }
       
       userId = data.user.id;
-      console.log(`Admin user created with ID: ${userId}`);
+      console.log(`✅ Admin user created with ID: ${userId}`);
     }
     
-    // Step 2: Create user_roles table if it doesn't exist
-    console.log('Checking user_roles table...');
+    // Step 3: Assign admin role
+    console.log('🔑 Assigning admin role...');
     
-    // Simple query to check if table exists
-    const { error: tableError } = await supabase
+    const { error: upsertError } = await supabase
       .from('user_roles')
-      .select('count')
-      .limit(1);
-      
-    if (tableError && tableError.code === '42P01') {
-      console.log('Creating user_roles table...');
-      
-      // Execute raw SQL to create the table
-      const { error: createTableError } = await supabase.rpc('exec_sql', { 
-        sql: `
-          CREATE TABLE IF NOT EXISTS user_roles (
-            id SERIAL PRIMARY KEY,
-            user_id UUID NOT NULL UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE,
-            role TEXT NOT NULL DEFAULT 'user',
-            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-          );
-        `
+      .upsert({ 
+        user_id: userId, 
+        role: 'admin',
+        updated_at: new Date().toISOString()
       });
-      
-      if (createTableError) {
-        console.warn('Could not create user_roles table:', createTableError.message);
-        console.log('Please create it manually in the Supabase dashboard');
-      } else {
-        console.log('Created user_roles table successfully');
-      }
+    
+    if (upsertError) {
+      throw new Error(`Error assigning admin role: ${upsertError.message}`);
     }
     
-    // Step 3: Add admin role
-    console.log('Assigning admin role...');
+    console.log('✅ Admin role assigned successfully');
     
-    // Direct SQL to insert admin role
-    const { error: roleError } = await supabase.rpc('exec_sql', { 
-      sql: `
-        INSERT INTO user_roles (user_id, role)
-        VALUES ('${userId}', 'admin')
-        ON CONFLICT (user_id) 
-        DO UPDATE SET role = 'admin', updated_at = NOW();
-      `
-    });
+    // Step 4: Ensure profile exists
+    console.log('🧩 Ensuring admin profile exists...');
     
-    if (roleError) {
-      console.error('Error assigning admin role:', roleError.message);
-      console.error('Please assign the admin role manually in the Supabase dashboard');
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .upsert({
+        id: userId,
+        email: ADMIN_EMAIL,
+        updated_at: new Date().toISOString()
+      });
+    
+    if (profileError) {
+      console.warn(`⚠️ Could not update profile: ${profileError.message}`);
+      console.warn('This is not critical, but you may want to manually create the profile entry.');
     } else {
-      console.log('✅ Admin role assigned successfully');
+      console.log('✅ Profile updated successfully');
     }
     
-    console.log('\nAdmin setup process complete!');
-    console.log('\nAdministrator Credentials:');
-    console.log(`Email:    ${ADMIN_EMAIL}`);
-    console.log(`Password: ${ADMIN_PASSWORD}`);
+    console.log('\n✅ Admin setup process complete!');
+    console.log('\n👤 Administrator Credentials:');
+    console.log(`📧 Email:    ${ADMIN_EMAIL}`);
+    console.log(`🔑 Password: ${ADMIN_PASSWORD}`);
     
-    console.log('\nIMPORTANT: Verify in your Supabase Dashboard:');
+    console.log('\n⚠️ IMPORTANT: Verify in your Supabase Dashboard:');
     console.log('1. Go to Authentication → Users to confirm the admin user exists');
     console.log('2. Go to Table Editor → user_roles to confirm the admin role is assigned');
-    console.log('\nIf verification fails, please create/update the user and role manually.');
 
   } catch (error) {
     console.error('❌ Setup failed:', error.message);
     console.error('\nPlease try setting up the admin user manually:');
-    console.error('1. Go to the Supabase dashboard → Authentication → Users');
-    console.error('2. Create a user with email: admin@abaya-ecom.test and password: AdminPass123!');
-    console.error('3. Ensure the user is confirmed (email verified)');
-    console.error('4. Create a user_roles table with columns: id, user_id, role, created_at, updated_at');
-    console.error('5. Insert a record with the admin\'s user_id and role="admin"');
+    console.error('1. Create the tables using the SQL at the top of this script');
+    console.error('2. Go to the Supabase dashboard → Authentication → Users');
+    console.error(`3. Create a user with email: ${ADMIN_EMAIL} and password: ${ADMIN_PASSWORD}`);
+    console.error('4. Ensure the user is confirmed (email verified)');
+    console.error('5. Insert a record in user_roles with the admin\'s user_id and role="admin"');
     process.exit(1);
   }
 }
 
+// Execute the setup
 setupAdmin(); 

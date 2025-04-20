@@ -27,28 +27,35 @@ export default function LoginForm({ redirectTo = "/" }: { redirectTo?: string })
     setIsLoading(true)
     
     try {
-      // Verify environment variables client-side
-      if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-        console.error('Missing Supabase configuration:', {
-          hasUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-          hasKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-        })
-        throw new Error('Authentication system is not properly configured')
-      }
-      
-      // Log submitted credentials for debugging
-      console.log(`Attempting login with: ${formData.get('email')}`)
-      
-      const result = await signIn(formData)
-      
-      if (result?.error) {
-        if (result.error === 'Authentication configuration error') {
-          throw new Error('Authentication system is not properly configured')
+      // Call signIn - will redirect or return error
+      const result = await signIn(formData).catch(error => {
+        // Handle NEXT_REDIRECT "errors" - these are actually successful redirects
+        if (error && error.message && error.message.includes('NEXT_REDIRECT')) {
+          // Successful login and redirect, silently return null
+          return null
         }
+        throw error // Re-throw other errors
+      })
+      
+      // If we get a result with an error, show it
+      if (result && result.error) {
+        console.error('Sign-in error:', result.error)
         setErrorMessage(result.error)
+        return
       }
+      
+      // If no redirect occurred (unusual), manually redirect
+      if (result !== null) {
+        window.location.href = '/'
+      }
+      
     } catch (error) {
-      console.error("Login error:", error)
+      // Final error handling
+      if (error instanceof Error && error.message.includes('NEXT_REDIRECT')) {
+        // This is another way the redirect might manifest - it's not an error
+        return
+      }
+      
       setErrorMessage(
         error instanceof Error 
           ? error.message 

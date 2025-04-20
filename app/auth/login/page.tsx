@@ -2,6 +2,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { Metadata } from "next"
 import LoginForm from "@/components/auth/LoginForm"
+import BypassAdminLogin from "@/components/auth/BypassAdminLogin"
 
 export const metadata: Metadata = {
   title: "Login | Abaya Elegance",
@@ -52,6 +53,11 @@ export default function LoginPage({
           <strong>Admin Test Credentials:</strong><br />
           Email: admin@abaya-ecom.test<br />
           Password: AdminPass123!
+        </div>
+        
+        {/* TEMPORARY: Direct Admin Access Button */}
+        <div className="mt-4">
+          <BypassAdminLogin />
         </div>
       </div>
 

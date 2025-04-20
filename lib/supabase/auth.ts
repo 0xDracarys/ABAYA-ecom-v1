@@ -37,18 +37,6 @@ export async function signIn(formData: FormData) {
   const password = formData.get('password') as string
   const redirectTo = formData.get('redirectTo') as string || '/'
   
-  // Enhanced email logging
-  console.log('Email value passed to Supabase signIn:', email)
-  console.log('Email validation check:', {
-    isString: typeof email === 'string',
-    length: email?.length,
-    format: email?.includes('@') ? 'contains @' : 'missing @',
-    trimmedValue: email?.trim()
-  })
-  
-  // Log authentication attempt
-  console.log('Attempting authentication for:', email)
-  
   const cookieStore = cookies()
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -70,10 +58,7 @@ export async function signIn(formData: FormData) {
 
   // Verify environment variables
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    console.error('Missing required environment variables:', {
-      hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-      hasSupabaseKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    })
+    console.error('[signIn] Missing required environment variables')
     return { error: 'Authentication configuration error' }
   }
 
@@ -85,36 +70,40 @@ export async function signIn(formData: FormData) {
     })
 
     if (error) {
-      console.error('Supabase SignIn Error Details:', {
-        message: error.message,
-        status: error.status,
-        name: error.name,
-        details: JSON.stringify(error, null, 2)
-      })
+      console.error('[signIn] Authentication error:', error.message)
       return { error: error.message }
     }
 
-    // Log successful authentication
-    console.log('Authentication successful for:', email, {
-      userId: data.user?.id,
-      session: !!data.session
-    })
+    // Check admin status from user_roles table
+    let targetRedirect = redirectTo
+    
+    try {
+      // Query user_roles table for admin role
+      const { data: userRole, error: roleError } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", data.user?.id)
+        .single()
 
-    // Check admin status
-    const { data: userRole } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", data.user?.id)
-      .single()
+      if (roleError) {
+        console.warn('[signIn] Error checking user role:', roleError.message)
+        // Continue with default redirect for users without roles
+      } else {
+        const isAdmin = userRole?.role === 'admin'
+        
+        // Override redirect for admin users to go to admin dashboard
+        if (isAdmin && redirectTo === '/') {
+          targetRedirect = '/admin/dashboard'
+        }
+      }
+    } catch (roleCheckError) {
+      console.warn('[signIn] Exception during role check:', roleCheckError)
+      // Continue with login despite role check failure, using default redirect
+    }
 
-    console.log('User role check:', {
-      userId: data.user?.id,
-      role: userRole?.role || 'no role found'
-    })
-
-    redirect(redirectTo)
+    redirect(targetRedirect)
   } catch (error) {
-    console.error('Unexpected authentication error:', error)
+    console.error('[signIn] Unexpected error:', error)
     return { error: 'An unexpected error occurred during authentication' }
   }
 }
@@ -139,32 +128,30 @@ export async function isAdmin() {
     return false
   }
 
-  // Check if user has admin role
-  const { data: userRole } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", session.user.id)
-    .single()
+  try {
+    // Check if user has admin role
+    const { data: userRole, error: roleError } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", session.user.id)
+      .single()
 
-  return userRole?.role === "admin"
+    if (roleError) {
+      console.warn('Error checking admin role:', roleError.message)
+      return false;
+    }
+
+    return userRole?.role === "admin"
+  } catch (error) {
+    console.error('Exception during admin check:', error)
+    return false
+  }
 }
 
 export async function signUp(formData: FormData) {
   const email = formData.get('email') as string
   const password = formData.get('password') as string
   const redirectTo = formData.get('redirectTo') as string || '/auth/login?message=Please check your email to confirm your account'
-  
-  // Enhanced email logging for registration
-  console.log('Email value passed to Supabase signUp:', email)
-  console.log('Email validation check:', {
-    isString: typeof email === 'string',
-    length: email?.length,
-    format: email?.includes('@') ? 'contains @' : 'missing @',
-    trimmedValue: email?.trim()
-  })
-  
-  // Log registration attempt
-  console.log('Attempting registration for:', email)
   
   const cookieStore = cookies()
   const supabase = createClient(
@@ -202,21 +189,12 @@ export async function signUp(formData: FormData) {
     })
 
     if (error) {
-      console.error('Supabase SignUp Error Details:', {
-        message: error.message,
-        status: error.status,
-        name: error.name,
-        details: JSON.stringify(error, null, 2)
-      })
+      console.error('Supabase SignUp Error:', error.message)
       return { error: error.message }
     }
 
     // Log successful registration
-    console.log('Registration successful for:', email, {
-      userId: data.user?.id,
-      session: !!data.session,
-      confirmationSent: !data.session
-    })
+    console.log('Registration successful for:', email)
 
     return { 
       success: true,

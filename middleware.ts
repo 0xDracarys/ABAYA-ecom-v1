@@ -1,89 +1,83 @@
-import { NextResponse, type NextRequest } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { NextRequest, NextResponse } from 'next/server'
+import { createServerClient } from '@/lib/supabase/server'
+import { cookies } from 'next/headers'
 
 export async function middleware(request: NextRequest) {
-  // Get the pathname of the request
+  // Check all paths that should be protected
+  const isProtectedRoute = request.nextUrl.pathname.startsWith('/admin')
+  const isHomePage = request.nextUrl.pathname === '/'
   const path = request.nextUrl.pathname
+  
+  console.log(`[Middleware] Processing request for path: ${path}`)
+  
+  if (!isProtectedRoute && !isHomePage) {
+    console.log(`[Middleware] Path ${path} is not protected, skipping auth checks`)
+    return NextResponse.next()
+  }
 
-  // For routes that start with /admin, check if the user is authenticated and has admin role
-  if (path.startsWith('/admin')) {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-    if (!supabaseUrl || !supabaseKey) {
-      console.error('Missing Supabase credentials')
-      return NextResponse.redirect(new URL('/auth/login', request.url))
+  try {
+    // Create server-side Supabase client using cookies for authentication
+    const supabase = createServerClient()
+    
+    // Check if user is authenticated
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    
+    if (userError || !user) {
+      // No valid session/user
+      console.log(`[Middleware] No authenticated user found: ${userError?.message || 'User not found'}`)
+      
+      if (isProtectedRoute) {
+        console.log(`[Middleware] Redirecting unauthenticated user from ${path} to /auth/login`)
+        return NextResponse.redirect(new URL('/auth/login', request.url))
+      }
+      
+      return NextResponse.next()
     }
-
-    // Create supabase client
-    const supabase = createClient(supabaseUrl, supabaseKey, {
-      cookies: {
-        get(name: string) {
-          return request.cookies.get(name)?.value
-        },
-      },
-    })
-
-    // Check if the user is authenticated
-    const { data: { session } } = await supabase.auth.getSession()
-
-    if (!session) {
-      // Redirect to login page with return URL
-      const redirectUrl = new URL('/auth/login', request.url)
-      redirectUrl.searchParams.set('redirect', path)
-      redirectUrl.searchParams.set('message', 'Please login to access the admin area')
-      return NextResponse.redirect(redirectUrl)
-    }
-
-    // Check if the user has admin role
-    const { data: userRole } = await supabase
+    
+    console.log(`[Middleware] User authenticated: ${user.id} (${user.email})`)
+    
+    // Check if user has admin role in user_roles table
+    const { data: userRole, error: roleError } = await supabase
       .from('user_roles')
       .select('role')
-      .eq('user_id', session.user.id)
+      .eq('user_id', user.id)
       .single()
-
-    if (!userRole || userRole.role !== 'admin') {
-      // Redirect to login page with message
-      const redirectUrl = new URL('/', request.url)
-      redirectUrl.searchParams.set('message', 'You do not have admin access')
-      return NextResponse.redirect(redirectUrl)
+    
+    if (roleError) {
+      console.error('[Middleware] Error checking user role:', roleError)
     }
-  }
-
-  // For routes that start with /account, check if the user is authenticated
-  if (path.startsWith('/account')) {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-    if (!supabaseUrl || !supabaseKey) {
-      console.error('Missing Supabase credentials')
+    
+    const isAdmin = userRole?.role === 'admin'
+    console.log(`[Middleware] Admin check result: ${isAdmin ? 'Is admin' : 'Not admin'}`)
+    
+    // Handle admin routes access control
+    if (isProtectedRoute && !isAdmin) {
+      console.log(`[Middleware] Non-admin user attempting to access ${path}, redirecting to /`)
+      return NextResponse.redirect(new URL('/', request.url))
+    }
+    
+    // Redirect admin from homepage to admin dashboard
+    if (isHomePage && isAdmin) {
+      console.log(`[Middleware] Admin user detected on homepage, redirecting to admin dashboard`)
+      return NextResponse.redirect(new URL('/admin/dashboard', request.url))
+    }
+    
+    console.log(`[Middleware] Access granted for ${path}`)
+    return NextResponse.next()
+    
+  } catch (error) {
+    console.error('[Middleware] Unexpected error:', error)
+    
+    // If error occurs on protected route, redirect to login
+    if (isProtectedRoute) {
+      console.log(`[Middleware] Error during auth check, redirecting from ${path} to /auth/login`)
       return NextResponse.redirect(new URL('/auth/login', request.url))
     }
-
-    // Create supabase client
-    const supabase = createClient(supabaseUrl, supabaseKey, {
-      cookies: {
-        get(name: string) {
-          return request.cookies.get(name)?.value
-        },
-      },
-    })
-
-    // Check if the user is authenticated
-    const { data: { session } } = await supabase.auth.getSession()
-
-    if (!session) {
-      // Redirect to login page with return URL
-      const redirectUrl = new URL('/auth/login', request.url)
-      redirectUrl.searchParams.set('redirect', path)
-      return NextResponse.redirect(redirectUrl)
-    }
+    
+    return NextResponse.next()
   }
-
-  return NextResponse.next()
 }
 
-// Only run middleware on matching paths
 export const config = {
-  matcher: ['/admin/:path*', '/account/:path*'],
+  matcher: ['/', '/admin/:path*'],
 } 

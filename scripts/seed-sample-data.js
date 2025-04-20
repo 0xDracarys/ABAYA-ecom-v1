@@ -24,10 +24,30 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
 // Sample data
 const sampleCategories = [
-  { name: 'Abayas', description: 'Traditional and modern Abayas for all occasions', image_url: 'https://source.unsplash.com/random/800x600/?abaya' },
-  { name: 'Jilbabs', description: 'Elegant Jilbabs with various styles', image_url: 'https://source.unsplash.com/random/800x600/?jilbab' },
-  { name: 'Hijabs', description: 'Beautiful Hijabs in different materials and colors', image_url: 'https://source.unsplash.com/random/800x600/?hijab' },
-  { name: 'Prayer Sets', description: 'Comfortable prayer sets for daily prayers', image_url: 'https://source.unsplash.com/random/800x600/?prayer' }
+  { 
+    name: 'Abayas', 
+    slug: 'abayas',
+    description: 'Traditional and modern Abayas for all occasions', 
+    image_url: 'https://source.unsplash.com/random/800x600/?abaya' 
+  },
+  { 
+    name: 'Jilbabs', 
+    slug: 'jilbabs',
+    description: 'Elegant Jilbabs with various styles', 
+    image_url: 'https://source.unsplash.com/random/800x600/?jilbab' 
+  },
+  { 
+    name: 'Hijabs', 
+    slug: 'hijabs',
+    description: 'Beautiful Hijabs in different materials and colors', 
+    image_url: 'https://source.unsplash.com/random/800x600/?hijab' 
+  },
+  { 
+    name: 'Prayer Sets', 
+    slug: 'prayer-sets',
+    description: 'Comfortable prayer sets for daily prayers', 
+    image_url: 'https://source.unsplash.com/random/800x600/?prayer' 
+  }
 ]
 
 const sampleTags = [
